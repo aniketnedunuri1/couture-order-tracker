@@ -4,18 +4,58 @@ import { NextResponse } from "next/server";
 // Initialize Supabase client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // Service role key for server-side access
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+
+// Cache UPS token
+let cachedToken: string | null = null;
+let tokenExpiry: number | null = null;
+
+// Get UPS token with caching
+async function getUPSToken() {
+  const now = Date.now();
+
+  // Return cached token if still valid
+  if (cachedToken && tokenExpiry && now < tokenExpiry) {
+    return cachedToken;
+  }
+
+  // Get new token
+  const clientId = process.env.UPS_CLIENT_ID!;
+  const clientSecret = process.env.UPS_CLIENT_SECRET!;
+  const authHeader = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+
+  const tokenResp = await fetch("https://onlinetools.ups.com/security/v1/oauth/token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: `Basic ${authHeader}`,
+    },
+    body: new URLSearchParams({ grant_type: "client_credentials" }).toString(),
+  });
+
+  const tokenData = await tokenResp.json();
+
+  if (!tokenResp.ok) {
+    throw new Error("Failed to get UPS token");
+  }
+
+  // Cache the token
+  cachedToken = tokenData.access_token;
+  tokenExpiry = now + tokenData.expires_in * 1000;
+
+  return cachedToken;
+}
 
 export async function POST(request: Request) {
   try {
-    const { customCode } = await request.json(); // Get custom code from client input
+    const { customCode } = await request.json();
 
-    // Step 1: Query Supabase to find the UPS tracking number
+    // Step 1: Query Supabase
     const { data, error } = await supabase
-      .from("Tracking") // Replace with your actual table name
-      .select("upsTrackingNumber") // Replace with your actual column name for the tracking number
-      .eq("customCode", customCode) // Match the custom code
+      .from("Tracking")
+      .select("upsTrackingNumber")
+      .eq("customCode", customCode)
       .single();
 
     if (error || !data) {
@@ -26,31 +66,19 @@ export async function POST(request: Request) {
       );
     }
 
-    const upsTrackingNumber = data.upsTrackingNumber;
-    console.log("Tracking number from Supabase:", upsTrackingNumber);
+    // Step 2: Get UPS token
+    const upsToken = await getUPSToken();
 
-    // Step 2: Fetch the UPS token from your /api/ups-token route
-    const tokenResp = await fetch("/api/ups-token");
-    const tokenData = await tokenResp.json();
-
-    if (!tokenResp.ok || !tokenData.access_token) {
-      console.error("UPS Token Error:", tokenData);
-      return NextResponse.json({ error: "Failed to fetch UPS token" }, { status: 500 });
-    }
-
-    const upsToken = tokenData.access_token;
-
-    // Step 3: Call the UPS API with the retrieved tracking number
+    // Step 3: Call UPS API
     const query = new URLSearchParams({
       locale: 'en_US',
       returnSignature: 'false',
       returnMilestones: 'false',
       returnPOD: 'false'
     }).toString();
-    
-    console.log("UPS", upsTrackingNumber);
+
     const upsResponse = await fetch(
-      `https://onlinetools.ups.com/api/track/v1/details/${upsTrackingNumber}?${query}`,
+      `https://onlinetools.ups.com/api/track/v1/details/${data.upsTrackingNumber}?${query}`,
       {
         method: "GET",
         headers: {
@@ -61,7 +89,7 @@ export async function POST(request: Request) {
       }
     );
 
-    console.log("UPS API URL:", `https://onlinetools.ups.com/api/track/${upsTrackingNumber}?${query}`);
+    console.log("UPS API URL:", `https://onlinetools.ups.com/api/track/${data.upsTrackingNumber}?${query}`);
     const upsData = await upsResponse.json();
     console.log('Raw UPS Response:', JSON.stringify(upsData, null, 2));
 
