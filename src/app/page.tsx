@@ -38,7 +38,7 @@ export default function Home() {
       } else {
         setError(data.error || "An error occurred")
       }
-    } catch (error) {
+    } catch {
       setError("An error occurred")
     }
     setIsLoading(false)

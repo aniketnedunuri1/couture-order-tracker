@@ -75,7 +75,6 @@ export async function POST(request: Request) {
 
     // Step 4: Extract relevant data and return it to the client
     const trackDetails = upsData.trackResponse?.shipment?.[0]?.package?.[0];
-    const latestActivity = trackDetails?.activity?.[0];
 
     // Format date from YYYYMMDD and HHMMSS to readable format
     const formatDateTime = (date: string, time: string) => {
