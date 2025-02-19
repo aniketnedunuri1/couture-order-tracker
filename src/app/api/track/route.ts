@@ -59,11 +59,12 @@ export async function POST(request: Request) {
       .single();
 
     if (error || !data) {
-      console.error("Supabase Error:", error);
-      return NextResponse.json(
-        { error: "Invalid custom code or tracking number not found" },
-        { status: 404 }
-      );
+      console.log("No tracking number found for code:", customCode);
+      // Return a 200 status with a friendly message instead of a 404 error
+      return NextResponse.json({
+        status: "Order in Production",
+        estimatedDelivery: "Not available yet"
+      });
     }
 
     // Step 2: Get UPS token

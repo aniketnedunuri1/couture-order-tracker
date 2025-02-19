@@ -33,11 +33,8 @@ export default function Home() {
         body: JSON.stringify({ customCode: trackingCode }),
       })
       const data = await response.json()
-      if (response.ok) {
-        setTrackingResult(data)
-      } else {
-        setError(data.error || "An error occurred")
-      }
+      setTrackingResult(data)
+      setError(null)
     } catch {
       setError("An error occurred")
     }
