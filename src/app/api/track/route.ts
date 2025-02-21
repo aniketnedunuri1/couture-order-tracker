@@ -58,9 +58,17 @@ export async function POST(request: Request) {
       .eq("customCode", customCode)
       .single();
 
-    if (error || !data) {
-      console.log("No tracking number found for code:", customCode);
-      // Return a 200 status with a friendly message instead of a 404 error
+    if (error) {
+      console.log("Invalid code:", customCode);
+      return NextResponse.json({
+        status: "Invalid tracking code",
+        estimatedDelivery: "Not available"
+      });
+    }
+
+    // Check if tracking number is "Na" or "na" (order in production)
+    if (data.upsTrackingNumber.toLowerCase() === "na") {
+      console.log("Order in production:", customCode);
       return NextResponse.json({
         status: "Order in Production",
         estimatedDelivery: "Not available yet"

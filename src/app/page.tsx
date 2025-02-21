@@ -54,7 +54,7 @@ export default function Home() {
               type="text"
               value={trackingCode}
               onChange={(e) => setTrackingCode(e.target.value)}
-              placeholder="e.g., IKIGAI-CLIENT-1"
+              placeholder="e.g., COUTURE-CLIENT-01"
               required
             />
             <Button variant="default" className="w-full" disabled={isLoading}>
