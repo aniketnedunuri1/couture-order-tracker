@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
-import { useSearchParams } from "next/navigation"
+import { useState, useEffect, Suspense, FormEvent } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 
@@ -12,12 +12,22 @@ interface TrackingResult {
 
 // Component that uses useSearchParams
 function TrackingContent() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const [trackingCode, setTrackingCode] = useState("")
+  const [inputTrackingCode, setInputTrackingCode] = useState("")
   const [trackingResult, setTrackingResult] = useState<TrackingResult | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [noCodeProvided, setNoCodeProvided] = useState(false)
+
+  // Function to handle form submission
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    if (inputTrackingCode.trim()) {
+      router.push(`/?tracking=${encodeURIComponent(inputTrackingCode.trim())}`)
+    }
+  }
 
   // Function to fetch tracking data
   const fetchTrackingData = async (code: string) => {
@@ -122,20 +132,45 @@ function TrackingContent() {
         </div>
       ) : noCodeProvided ? (
         <div className="w-full border border-black">
-          <div className="p-6 text-center">
-            <AlertCircle className="h-8 w-8 mx-auto mb-4 text-black" />
-            <h2 className="text-sm uppercase font-bold mb-2">No Tracking Code Provided</h2>
-            <p className="text-xs text-gray-600 mb-4">
-              Don&apos;t have a tracking code? Reach out to us at:
-            </p>
-            <a 
-              href="https://couturebyikigai.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-xs uppercase font-bold border-b border-black pb-px hover:opacity-70 transition-opacity"
-            >
-              couturebyikigai.com
-            </a>
+          <div className="p-6">
+            <div className="text-center mb-6">
+              <h2 className="text-sm uppercase font-bold mb-2">Track Your Order</h2>
+              <p className="text-xs text-gray-600 mb-4">
+                Enter your tracking code below
+              </p>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="mb-6">
+              <div className="flex flex-col space-y-3">
+                <input
+                  type="text"
+                  value={inputTrackingCode}
+                  onChange={(e) => setInputTrackingCode(e.target.value)}
+                  placeholder="TRACKING CODE"
+                  className="w-full px-3 py-2 border border-black text-xs uppercase placeholder:text-gray-400 focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  className="w-full bg-black text-white uppercase text-xs py-2 px-4 hover:bg-gray-800 transition-colors"
+                >
+                  Track Order
+                </button>
+              </div>
+            </form>
+            
+            <div className="text-center">
+              <p className="text-xs text-gray-600 mb-2">
+                Don&apos;t have a tracking code?
+              </p>
+              <a 
+                href="https://couturebyikigai.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-xs uppercase font-bold border-b border-black pb-px hover:opacity-70 transition-opacity"
+              >
+                Visit our website
+              </a>
+            </div>
           </div>
         </div>
       ) : null}
