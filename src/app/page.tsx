@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
-import Image from "next/image"
-import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 
@@ -127,12 +125,17 @@ export default function Home() {
             <div className="p-6 text-center">
               <AlertCircle className="h-8 w-8 mx-auto mb-4 text-black" />
               <h2 className="text-sm uppercase font-bold mb-2">No Tracking Code Provided</h2>
-              <p className="text-xs text-gray-600">
-                Please use a URL with a tracking parameter:<br />
-                <code className="bg-gray-100 px-2 py-1 rounded text-xs">
-                  ?tracking=YOUR-CODE
-                </code>
+              <p className="text-xs text-gray-600 mb-4">
+                Don't have a tracking code? Reach out to us at:
               </p>
+              <a 
+                href="https://couturebyikigai.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-xs uppercase font-bold border-b border-black pb-px hover:opacity-70 transition-opacity"
+              >
+                couturebyikigai.com
+              </a>
             </div>
           </div>
         ) : null}
