@@ -126,7 +126,7 @@ export default function Home() {
               <AlertCircle className="h-8 w-8 mx-auto mb-4 text-black" />
               <h2 className="text-sm uppercase font-bold mb-2">No Tracking Code Provided</h2>
               <p className="text-xs text-gray-600 mb-4">
-                Don't have a tracking code? Reach out to us at:
+                Don&apos;t have a tracking code? Reach out to us at:
               </p>
               <a 
                 href="https://couturebyikigai.com" 
