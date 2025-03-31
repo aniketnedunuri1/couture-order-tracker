@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
@@ -10,7 +10,8 @@ interface TrackingResult {
   estimatedDelivery: string
 }
 
-export default function Home() {
+// Component that uses useSearchParams
+function TrackingContent() {
   const searchParams = useSearchParams()
   const [trackingCode, setTrackingCode] = useState("")
   const [trackingResult, setTrackingResult] = useState<TrackingResult | null>(null)
@@ -70,80 +71,116 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-4 md:p-8 bg-white">
-      <div className="w-full max-w-md">
-        {/* Logo and Header */}
-        <div className="flex flex-col items-center mb-8">
-          <h1 className="text-2xl uppercase font-bold mb-2 tracking-tight text-center">
-            COUTURE ORDER TRACKER
-          </h1>
-          <div className="h-px w-24 bg-black mb-4"></div>
-          {trackingCode && (
-            <p className="text-xs uppercase tracking-wider text-center">
-              Tracking: {trackingCode}
-            </p>
-          )}
-        </div>
-
-        {isLoading ? (
-          <div className="w-full border border-gray-200">
-            <div className="flex flex-col items-center justify-center p-8">
-              <div className="animate-pulse flex flex-col items-center">
-                <div className="h-4 w-24 bg-gray-200 rounded mb-4"></div>
-                <div className="h-3 w-32 bg-gray-200 rounded"></div>
-              </div>
-            </div>
-          </div>
-        ) : error ? (
-          <Alert variant="destructive" className="mb-4 text-xs">
-            <AlertCircle className="h-3 w-3" />
-            <AlertTitle className="text-xs uppercase">Error</AlertTitle>
-            <AlertDescription className="text-xs">{error}</AlertDescription>
-          </Alert>
-        ) : trackingResult ? (
-          <div className="w-full border border-black">
-            <div className="p-6">
-              <div className="space-y-6">
-                <div className="border-b border-gray-200 pb-4">
-                  <h2 className="text-xs uppercase tracking-wider text-gray-500 mb-1">Status</h2>
-                  <p className={`text-lg uppercase font-bold ${getStatusColor(trackingResult.status)}`}>
-                    {trackingResult.status}
-                  </p>
-                </div>
-                
-                <div>
-                  <h2 className="text-xs uppercase tracking-wider text-gray-500 mb-1">Estimated Delivery</h2>
-                  <p className="text-sm">
-                    {trackingResult.estimatedDelivery}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : noCodeProvided ? (
-          <div className="w-full border border-black">
-            <div className="p-6 text-center">
-              <AlertCircle className="h-8 w-8 mx-auto mb-4 text-black" />
-              <h2 className="text-sm uppercase font-bold mb-2">No Tracking Code Provided</h2>
-              <p className="text-xs text-gray-600 mb-4">
-                Don&apos;t have a tracking code? Reach out to us at:
-              </p>
-              <a 
-                href="https://couturebyikigai.com" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-xs uppercase font-bold border-b border-black pb-px hover:opacity-70 transition-opacity"
-              >
-                couturebyikigai.com
-              </a>
-            </div>
-          </div>
-        ) : null}
-
-        <footer className="mt-8 text-center text-gray-500 text-xs uppercase tracking-wider">
-          <p>&copy; {new Date().getFullYear()} Couture by Ikigai</p>
-        </footer>
+    <div className="w-full max-w-md">
+      {/* Logo and Header */}
+      <div className="flex flex-col items-center mb-8">
+        <h1 className="text-2xl uppercase font-bold mb-2 tracking-tight text-center">
+          COUTURE ORDER TRACKER
+        </h1>
+        <div className="h-px w-24 bg-black mb-4"></div>
+        {trackingCode && (
+          <p className="text-xs uppercase tracking-wider text-center">
+            Tracking: {trackingCode}
+          </p>
+        )}
       </div>
+
+      {isLoading ? (
+        <div className="w-full border border-gray-200">
+          <div className="flex flex-col items-center justify-center p-8">
+            <div className="animate-pulse flex flex-col items-center">
+              <div className="h-4 w-24 bg-gray-200 rounded mb-4"></div>
+              <div className="h-3 w-32 bg-gray-200 rounded"></div>
+            </div>
+          </div>
+        </div>
+      ) : error ? (
+        <Alert variant="destructive" className="mb-4 text-xs">
+          <AlertCircle className="h-3 w-3" />
+          <AlertTitle className="text-xs uppercase">Error</AlertTitle>
+          <AlertDescription className="text-xs">{error}</AlertDescription>
+        </Alert>
+      ) : trackingResult ? (
+        <div className="w-full border border-black">
+          <div className="p-6">
+            <div className="space-y-6">
+              <div className="border-b border-gray-200 pb-4">
+                <h2 className="text-xs uppercase tracking-wider text-gray-500 mb-1">Status</h2>
+                <p className={`text-lg uppercase font-bold ${getStatusColor(trackingResult.status)}`}>
+                  {trackingResult.status}
+                </p>
+              </div>
+              
+              <div>
+                <h2 className="text-xs uppercase tracking-wider text-gray-500 mb-1">Estimated Delivery</h2>
+                <p className="text-sm">
+                  {trackingResult.estimatedDelivery}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : noCodeProvided ? (
+        <div className="w-full border border-black">
+          <div className="p-6 text-center">
+            <AlertCircle className="h-8 w-8 mx-auto mb-4 text-black" />
+            <h2 className="text-sm uppercase font-bold mb-2">No Tracking Code Provided</h2>
+            <p className="text-xs text-gray-600 mb-4">
+              Don&apos;t have a tracking code? Reach out to us at:
+            </p>
+            <a 
+              href="https://couturebyikigai.com" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-xs uppercase font-bold border-b border-black pb-px hover:opacity-70 transition-opacity"
+            >
+              couturebyikigai.com
+            </a>
+          </div>
+        </div>
+      ) : null}
+
+      <footer className="mt-8 text-center text-gray-500 text-xs uppercase tracking-wider">
+        <p>&copy; {new Date().getFullYear()} Couture by Ikigai</p>
+      </footer>
+    </div>
+  )
+}
+
+// Loading fallback
+function TrackingFallback() {
+  return (
+    <div className="w-full max-w-md">
+      <div className="flex flex-col items-center mb-8">
+        <h1 className="text-2xl uppercase font-bold mb-2 tracking-tight text-center">
+          COUTURE ORDER TRACKER
+        </h1>
+        <div className="h-px w-24 bg-black mb-4"></div>
+      </div>
+      
+      <div className="w-full border border-gray-200">
+        <div className="flex flex-col items-center justify-center p-8">
+          <div className="animate-pulse flex flex-col items-center">
+            <div className="h-4 w-24 bg-gray-200 rounded mb-4"></div>
+            <div className="h-3 w-32 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </div>
+      
+      <footer className="mt-8 text-center text-gray-500 text-xs uppercase tracking-wider">
+        <p>&copy; {new Date().getFullYear()} Couture by Ikigai</p>
+      </footer>
+    </div>
+  )
+}
+
+// Main page component with Suspense
+export default function Home() {
+  return (
+    <main className="min-h-screen flex flex-col items-center justify-center p-4 md:p-8 bg-white">
+      <Suspense fallback={<TrackingFallback />}>
+        <TrackingContent />
+      </Suspense>
     </main>
   )
 }
