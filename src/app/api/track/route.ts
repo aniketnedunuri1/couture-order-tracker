@@ -307,7 +307,7 @@ async function processTrackingRequest(customCode: string) {
     });
   }
 
-  let trackingNumber = data.upsTrackingNumber;
+  const trackingNumber = data.upsTrackingNumber;
   let carrier = data.carrier || "UPS"; // Default to UPS for backward compatibility
   console.log("Tracking number:", trackingNumber, "Carrier:", carrier);
   
