@@ -8,6 +8,9 @@ import { AlertCircle } from "lucide-react"
 interface TrackingResult {
   status: string
   estimatedDelivery: string
+  deliveryTime?: string | null
+  currentLocation?: string
+  latestUpdate?: string
 }
 
 // Component that uses useSearchParams
@@ -80,6 +83,23 @@ function TrackingContent() {
     return "text-black"
   }
 
+  const formatTime = (time: string | null) => {
+    if (!time) return "Unknown";
+    
+    // Check if the time is in HHMMSS format (6 digits with no separators)
+    if (/^\d{6}$/.test(time)) {
+      const hour = parseInt(time.substring(0, 2));
+      const minute = time.substring(2, 4);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const hour12 = hour % 12 || 12; // Convert 0 to 12 for 12 AM
+      
+      return `${hour12}:${minute} ${ampm}`;
+    }
+    
+    // If it's already formatted, return as is
+    return time;
+  }
+
   return (
     <div className="w-full max-w-md">
       {/* Logo and Header */}
@@ -127,6 +147,30 @@ function TrackingContent() {
                   {trackingResult.estimatedDelivery}
                 </p>
               </div>
+              {trackingResult.deliveryTime && (
+                <div>
+                  <h2 className="text-xs uppercase tracking-wider text-gray-500 mb-1">Delivery Time</h2>
+                  <p className="text-sm">
+                    {trackingResult.deliveryTime}
+                  </p>
+                </div>
+              )}
+              {trackingResult.currentLocation && (
+                <div>
+                  <h2 className="text-xs uppercase tracking-wider text-gray-500 mb-1">Current Location</h2>
+                  <p className="text-sm">
+                    {trackingResult.currentLocation}
+                  </p>
+                </div>
+              )}
+              {trackingResult.latestUpdate && (
+                <div>
+                  <h2 className="text-xs uppercase tracking-wider text-gray-500 mb-1">Latest Update</h2>
+                  <p className="text-sm">
+                    {trackingResult.latestUpdate}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
