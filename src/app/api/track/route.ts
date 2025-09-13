@@ -1,11 +1,10 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import Airtable from "airtable";
 
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Initialize Airtable client
+const airtable = new Airtable({
+  apiKey: process.env.AIRTABLE_API_KEY
+}).base(process.env.AIRTABLE_BASE_ID!);
 
 // Cache UPS token
 let cachedToken: string | null = null;
@@ -283,61 +282,74 @@ function detectCarrier(trackingNumber: string): "UPS" | "FEDEX" | null {
 
 // Common function to process tracking requests
 async function processTrackingRequest(customCode: string) {
-  // Step 1: Query Supabase
-  const { data, error } = await supabase
-    .from("Tracking")
-    .select("upsTrackingNumber, carrier")
-    .eq("customCode", customCode)
-    .single();
-
-  if (error) {
-    console.log("Invalid code:", customCode);
-    return NextResponse.json({
-      status: "Invalid tracking code",
-      estimatedDelivery: "Not available"
-    });
-  }
-
-  // Check if tracking number is "Na" or "na" (order in production)
-  if (data.upsTrackingNumber.toLowerCase() === "na") {
-    console.log("Order in production:", customCode);
-    return NextResponse.json({
-      status: "Order in Production",
-      estimatedDelivery: "Not available yet"
-    });
-  }
-
-  const trackingNumber = data.upsTrackingNumber;
-  let carrier = data.carrier || "UPS"; // Default to UPS for backward compatibility
-  console.log("Tracking number:", trackingNumber, "Carrier:", carrier);
-  
-  // If carrier is not specified or set to AUTO, try to detect it from the tracking number format
-  if (!carrier || carrier === "AUTO") {
-    const detectedCarrier = detectCarrier(trackingNumber);
-    if (detectedCarrier) {
-      carrier = detectedCarrier;
-    } else {
-      carrier = "UPS"; // Default to UPS if detection fails
-    }
-  }
-
+  // Step 1: Query Airtable
   try {
-    // Track the package based on the carrier
-    let trackingResult;
-    if (carrier === "FEDEX") {
-      console.log("Processing as FEDEX tracking");
-      trackingResult = await trackFedExPackage(trackingNumber);
-    } else {
-      console.log("Processing as UPS tracking");
-      trackingResult = await trackUPSPackage(trackingNumber);
+    const records = await airtable('Clients')
+      .select({
+        filterByFormula: `{DropCodes} = "${customCode}"`
+      })
+      .firstPage();
+
+    if (!records || records.length === 0) {
+      console.log("Invalid code:", customCode);
+      return NextResponse.json({
+        status: "Invalid tracking code",
+        estimatedDelivery: "Not available"
+      });
+    }
+
+    const record = records[0];
+    const trackingNumber = record.get('tracking') as string;
+    let carrier = (record.get('carrier') as string) || "UPS"; // Default to UPS for backward compatibility
+    
+    // Check if tracking number is "Na" or "na" (order in production)
+    if (!trackingNumber || trackingNumber.toLowerCase() === "na") {
+      console.log("Order in production:", customCode);
+      return NextResponse.json({
+        status: "Order in Production",
+        estimatedDelivery: "Not available yet"
+      });
+    }
+
+    console.log("Tracking number:", trackingNumber, "Carrier:", carrier);
+  
+    // If carrier is not specified or set to AUTO, try to detect it from the tracking number format
+    if (!carrier || carrier.toUpperCase() === "AUTO") {
+      const detectedCarrier = detectCarrier(trackingNumber);
+      if (detectedCarrier) {
+        carrier = detectedCarrier;
+      } else {
+        carrier = "UPS"; // Default to UPS if detection fails
+      }
     }
     
-    console.log('Final Response:', trackingResult);
-    return NextResponse.json(trackingResult);
+    // Normalize carrier to uppercase for consistent comparison
+    carrier = carrier.toUpperCase();
+
+      try {
+      // Track the package based on the carrier
+      let trackingResult;
+      if (carrier === "FEDEX") {
+        console.log("Processing as FEDEX tracking");
+        trackingResult = await trackFedExPackage(trackingNumber);
+      } else {
+        console.log("Processing as UPS tracking");
+        trackingResult = await trackUPSPackage(trackingNumber);
+      }
+      
+      console.log('Final Response:', trackingResult);
+      return NextResponse.json(trackingResult);
+    } catch (error) {
+      console.error("Error tracking package:", error);
+      return NextResponse.json(
+        { error: `Error tracking package: ${(error as Error).message}` },
+        { status: 500 }
+      );
+    }
   } catch (error) {
-    console.error("Error tracking package:", error);
+    console.error("Error querying Airtable:", error);
     return NextResponse.json(
-      { error: `Error tracking package: ${(error as Error).message}` },
+      { error: `Error retrieving tracking information: ${(error as Error).message}` },
       { status: 500 }
     );
   }
