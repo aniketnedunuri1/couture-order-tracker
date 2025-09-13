@@ -83,23 +83,6 @@ function TrackingContent() {
     return "text-black"
   }
 
-  const formatTime = (time: string | null) => {
-    if (!time) return "Unknown";
-    
-    // Check if the time is in HHMMSS format (6 digits with no separators)
-    if (/^\d{6}$/.test(time)) {
-      const hour = parseInt(time.substring(0, 2));
-      const minute = time.substring(2, 4);
-      const ampm = hour >= 12 ? 'PM' : 'AM';
-      const hour12 = hour % 12 || 12; // Convert 0 to 12 for 12 AM
-      
-      return `${hour12}:${minute} ${ampm}`;
-    }
-    
-    // If it's already formatted, return as is
-    return time;
-  }
-
   return (
     <div className="w-full max-w-md">
       {/* Logo and Header */}
