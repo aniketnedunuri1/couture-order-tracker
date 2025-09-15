@@ -284,11 +284,14 @@ function detectCarrier(trackingNumber: string): "UPS" | "FEDEX" | null {
 async function processTrackingRequest(customCode: string) {
   // Step 1: Query Airtable
   try {
+    // Use UPPER() function to make the search case-insensitive
     const records = await airtable('Clients')
       .select({
-        filterByFormula: `{DropCodes} = "${customCode}"`
+        filterByFormula: `UPPER({DropCodes}) = UPPER("${customCode}")`
       })
       .firstPage();
+      
+    console.log("Airtable query for code:", customCode);
 
     if (!records || records.length === 0) {
       console.log("Invalid code:", customCode);
@@ -366,9 +369,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Missing tracking code" }, { status: 400 });
     }
     
-    // Remove quotes if present
-    const cleanCode = customCode.replace(/^"|"$/g, '');
+    // Clean the tracking code - remove quotes, trim whitespace, and handle URL encoding issues
+    const cleanCode = decodeURIComponent(customCode)
+      .replace(/^"|"$/g, '')
+      .replace(/\+/g, ' ')
+      .trim();
     
+    console.log("Cleaned tracking code:", cleanCode);
     return processTrackingRequest(cleanCode);
   } catch (error) {
     console.error("Error:", error);
@@ -379,7 +386,19 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const { customCode } = await request.json();
-    return processTrackingRequest(customCode);
+    
+    if (!customCode) {
+      return NextResponse.json({ error: "Missing tracking code" }, { status: 400 });
+    }
+    
+    // Clean the tracking code - remove quotes, trim whitespace, and handle URL encoding issues
+    const cleanCode = decodeURIComponent(customCode)
+      .replace(/^"|"$/g, '')
+      .replace(/\+/g, ' ')
+      .trim();
+      
+    console.log("Cleaned tracking code (POST):", cleanCode);
+    return processTrackingRequest(cleanCode);
   } catch (error) {
     console.error("Error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
