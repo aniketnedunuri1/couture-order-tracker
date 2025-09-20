@@ -287,7 +287,7 @@ async function processTrackingRequest(customCode: string) {
     // Use UPPER() function to make the search case-insensitive
     const records = await airtable('Clients')
       .select({
-        filterByFormula: `UPPER({DropCodes}) = UPPER("${customCode}")`
+        filterByFormula: `UPPER({DropCode}) = UPPER("${customCode}")`
       })
       .firstPage();
       
